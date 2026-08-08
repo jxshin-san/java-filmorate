@@ -12,7 +12,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FilmorateApplicationTests {
+class FilmorateApplicationTest {
 
     private static ValidatorFactory validatorFactory;
     private static Validator validator;

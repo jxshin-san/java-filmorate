@@ -70,7 +70,7 @@ public class FilmController {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Ошибка валидации фильма: дата релиза {} раньше допустимой", film.getReleaseDate());
 
-            throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года" );
+            throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года");
         }
     }
 }

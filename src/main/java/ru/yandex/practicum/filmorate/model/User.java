@@ -23,5 +23,5 @@ public class User {
 
     private String name;
     private LocalDate birthday;
-    private Set<Long> friends = new LinkedHashSet<>();
+    private Set<Integer> friends = new LinkedHashSet<>();
 }

@@ -30,7 +30,7 @@ public class FilmService {
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
         Film film = getFilm(filmId);
-        film.getLikes().add((long) userId);
+        film.getLikes().add(userId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
         return film;
     }
@@ -39,7 +39,7 @@ public class FilmService {
         userStorage.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
         Film film = getFilm(filmId);
-        film.getLikes().remove((long) userId);
+        film.getLikes().remove(userId);
         log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
         return film;
     }

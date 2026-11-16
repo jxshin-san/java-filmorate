@@ -26,5 +26,5 @@ public class Film {
     @Positive
     private int duration;
 
-    private Set<Long> likes = new LinkedHashSet<>();
+    private Set<Integer> likes = new LinkedHashSet<>();
 }

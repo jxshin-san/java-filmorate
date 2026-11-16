@@ -6,11 +6,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
 public class User {
-
     private int id;
 
     @NotBlank
@@ -21,6 +22,6 @@ public class User {
     private String login;
 
     private String name;
-
     private LocalDate birthday;
+    private Set<Long> friends = new LinkedHashSet<>();
 }

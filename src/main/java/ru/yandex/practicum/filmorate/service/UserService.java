@@ -1,8 +1,8 @@
-
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -16,7 +16,7 @@ public class UserService {
     private final UserStorage userStorage;
 
     @Autowired
-    public UserService(UserStorage userStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage) {
         this.userStorage = userStorage;
     }
 
@@ -28,10 +28,11 @@ public class UserService {
             throw new IllegalArgumentException("Пользователь не может добавить в друзья самого себя");
         }
 
+        // Односторонняя дружба: добавляем только для юзера
         user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        userStorage.addFriend(userId, friendId); // Метод сохранения в БД (нужно будет добавить в Storage)
 
-        log.info("Пользователи {} и {} добавлены в друзья", userId, friendId);
+        log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
         return user;
     }
 
@@ -40,9 +41,9 @@ public class UserService {
         User friend = getUser(friendId);
 
         user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        userStorage.removeFriend(userId, friendId); // Метод удаления из БД
 
-        log.info("Пользователи {} и {} удалены из друзей", userId, friendId);
+        log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
         return user;
     }
 

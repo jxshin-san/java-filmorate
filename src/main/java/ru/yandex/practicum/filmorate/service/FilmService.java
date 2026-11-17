@@ -54,11 +54,13 @@ public class FilmService {
     }
 
     public Film update(Film film) {
+        Film existing = filmStorage.findById(film.getId())
+                .orElseThrow(() -> new NotFoundException("Фильм с id " + film.getId() + " не найден"));
+
         validateReleaseDate(film);
         checkMpaExists(film.getMpa());
         checkGenresExist(film.getGenres());
-        Film existing = filmStorage.findById(film.getId())
-                .orElseThrow(() -> new NotFoundException("Фильм с id " + film.getId() + " не найден"));
+
         film.setLikes(existing.getLikes());
         Film updated = filmStorage.update(film);
         log.info("Обновлён фильм id={}", updated.getId());
@@ -115,7 +117,10 @@ public class FilmService {
     }
 
     private void checkMpaExists(Mpa mpa) {
-        if (mpa == null || mpa.getId() == 0) {
+        if (mpa == null) {
+            return;
+        }
+        if (mpa.getId() == 0) {
             throw new ValidationException("Рейтинг MPA обязателен");
         }
         mpaStorage.findById(mpa.getId())

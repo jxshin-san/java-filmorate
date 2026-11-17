@@ -14,9 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 public class FilmDbStorage implements FilmStorage {
@@ -100,30 +99,59 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() == null || film.getGenres().isEmpty()) {
             return;
         }
-        for (Genre genre : film.getGenres()) {
-            String sql = "MERGE INTO film_genres (film_id, genre_id) KEY(film_id, genre_id) VALUES (?, ?)";
-            jdbcTemplate.update(sql, film.getId(), genre.getId());
-        }
+
+        String sql = "MERGE INTO film_genres (film_id, genre_id) KEY(film_id, genre_id) VALUES (?, ?)";
+
+        jdbcTemplate.batchUpdate(sql, film.getGenres(), film.getGenres().size(),
+                (ps, genre) -> {
+                    ps.setInt(1, film.getId());
+                    ps.setInt(2, genre.getId());
+                });
     }
 
     private void loadGenresForFilms(List<Film> films) {
+        if (films.isEmpty()) {
+            return;
+        }
+
+        String inSql = films.stream().map(f -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT fg.film_id, g.id, g.name " +
+                "FROM film_genres fg JOIN genres g ON g.id = fg.genre_id " +
+                "WHERE fg.film_id IN (" + inSql + ")";
+
+        Map<Integer, Set<Genre>> genresByFilm = new HashMap<>();
+
+        jdbcTemplate.query(sql, films.stream().map(Film::getId).toArray(), rs -> {
+            int filmId = rs.getInt("film_id");
+            Genre genre = new Genre();
+            genre.setId(rs.getInt("id"));
+            genre.setName(rs.getString("name"));
+            genresByFilm.computeIfAbsent(filmId, k -> new LinkedHashSet<>()).add(genre);
+        });
+
         for (Film film : films) {
-            String sql = "SELECT g.id, g.name FROM genres g JOIN film_genres fg ON g.id = fg.genre_id WHERE fg.film_id = ?";
-            List<Genre> genres = jdbcTemplate.query(sql, (rs, rowNum) -> {
-                Genre genre = new Genre();
-                genre.setId(rs.getInt("id"));
-                genre.setName(rs.getString("name"));
-                return genre;
-            }, film.getId());
-            film.setGenres(new LinkedHashSet<>(genres));
+            film.setGenres(genresByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()));
         }
     }
 
     private void loadLikesForFilms(List<Film> films) {
+        if (films.isEmpty()) {
+            return;
+        }
+
+        String inSql = films.stream().map(f -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT film_id, user_id FROM film_likes WHERE film_id IN (" + inSql + ")";
+
+        Map<Integer, Set<Integer>> likesByFilm = new HashMap<>();
+
+        jdbcTemplate.query(sql, films.stream().map(Film::getId).toArray(), rs -> {
+            int filmId = rs.getInt("film_id");
+            likesByFilm.computeIfAbsent(filmId, k -> new LinkedHashSet<>())
+                    .add(rs.getInt("user_id"));
+        });
+
         for (Film film : films) {
-            String sql = "SELECT user_id FROM film_likes WHERE film_id = ?";
-            List<Integer> likes = jdbcTemplate.query(sql, (rs, rowNum) -> rs.getInt("user_id"), film.getId());
-            film.setLikes(new LinkedHashSet<>(likes));
+            film.setLikes(likesByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()));
         }
     }
 

@@ -15,10 +15,8 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -131,12 +129,26 @@ public class FilmService {
         if (genres == null || genres.isEmpty()) {
             return;
         }
+
         for (Genre genre : genres) {
             if (genre == null || genre.getId() == 0) {
                 throw new ValidationException("Жанр должен содержать id");
             }
-            genreStorage.findById(genre.getId())
-                    .orElseThrow(() -> new NotFoundException("Жанр с id " + genre.getId() + " не найден"));
+        }
+
+        Set<Integer> genreIds = genres.stream()
+                .map(Genre::getId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> existingIds = genreStorage.findAllByIds(genreIds).stream()
+                .map(Genre::getId)
+                .collect(Collectors.toSet());
+
+        Set<Integer> missingIds = new HashSet<>(genreIds);
+        missingIds.removeAll(existingIds);
+
+        if (!missingIds.isEmpty()) {
+            throw new NotFoundException("Жанры с id " + missingIds + " не найдены");
         }
     }
 }

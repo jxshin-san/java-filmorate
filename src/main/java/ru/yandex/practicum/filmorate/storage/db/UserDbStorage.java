@@ -12,9 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository("userDbStorage")
 public class UserDbStorage implements UserStorage {
@@ -94,12 +93,23 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void loadFriendsForUsers(List<User> users) {
+        if (users.isEmpty()) {
+            return;
+        }
+
+        String inSql = users.stream().map(u -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT user_id, friend_id FROM friendships WHERE user_id IN (" + inSql + ")";
+
+        Map<Integer, Set<Integer>> friendsByUser = new HashMap<>();
+
+        jdbcTemplate.query(sql, users.stream().map(User::getId).toArray(), rs -> {
+            int userId = rs.getInt("user_id");
+            friendsByUser.computeIfAbsent(userId, k -> new LinkedHashSet<>())
+                    .add(rs.getInt("friend_id"));
+        });
+
         for (User user : users) {
-            String sql = "SELECT friend_id FROM friendships WHERE user_id = ?";
-            List<Integer> friends = jdbcTemplate.query(sql,
-                    (rs, rowNum) -> rs.getInt("friend_id"),
-                    user.getId());
-            user.setFriends(new LinkedHashSet<>(friends));
+            user.setFriends(friendsByUser.getOrDefault(user.getId(), new LinkedHashSet<>()));
         }
     }
 

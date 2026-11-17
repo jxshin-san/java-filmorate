@@ -28,9 +28,8 @@ public class UserService {
             throw new IllegalArgumentException("Пользователь не может добавить в друзья самого себя");
         }
 
-        // Односторонняя дружба: добавляем только для юзера
         user.getFriends().add(friendId);
-        userStorage.addFriend(userId, friendId); // Метод сохранения в БД (нужно будет добавить в Storage)
+        userStorage.addFriend(userId, friendId);
 
         log.info("Пользователь {} добавил в друзья пользователя {}", userId, friendId);
         return user;
@@ -41,7 +40,7 @@ public class UserService {
         User friend = getUser(friendId);
 
         user.getFriends().remove(friendId);
-        userStorage.removeFriend(userId, friendId); // Метод удаления из БД
+        userStorage.removeFriend(userId, friendId);
 
         log.info("Пользователь {} удалил из друзей пользователя {}", userId, friendId);
         return user;
